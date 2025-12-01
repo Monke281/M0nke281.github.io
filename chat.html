@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Free HTML Chat Room</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #181825;
+    }
+    #messages div {
+      margin: 8px 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    .you {
+      background: #89b4fa;
+      align-self: flex-end;
+      margin-left: auto;
+      color: #111;
+    }
+    .others {
+      background: #45475a;
+      align-self: flex-start;
+    }
+    form {
+      display: flex;
+      padding: 15px;
+      background: #11111b;
+      gap: 10px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #313244;
+      color: #cdd6f4;
+      font-size: 16px;
+    }
+    button {
+      padding: 12px 20px;
+      background: #a6e3a1;
+      border: none;
+      border-radius: 8px;
+      color: #111;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover { background: #94e2d5; }
+    #nickname {
+      background: #f38ba8;
+      padding: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="nickname">Choose a nickname → type it and press Enter</div>
+
+  <div id="messages"></div>
+
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="Type a message..." />
+    <button>Send</button>
+  </form>
+
+  <!-- Firebase (free tier is more than enough for a simple chat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <script>
+    // === FREE Firebase config (create your own project at firebase.google.com) ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9z1YVJ1q3X7k9w8v6l5m4n3b2c1a0d9e", // ← replace with yours
+      authDomain: "your-project.firebaseapp.com",
+      databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+      projectId: "your-project",
+      storageBucket: "your-project.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:abcdef1234567890"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const messagesRef = db.ref("chat");
+
+    let nickname = "";
+
+    // Ask for nickname
+    const input = document.getElementById("input");
+    input.placeholder = "Enter your nickname first...";
+    input.focus();
+
+    const form = document.getElementById("form");
+    const messages = document.getElementById("messages");
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!input.value.trim()) return;
+
+      if (!nickname) {
+        nickname = input.value.trim().substring(0, 20) || "Guest";
+        document.getElementById("nickname").textContent = `Hello, ${nickname}! Now you can chat.`;
+        input.placeholder = "Type a message...";
+        input.value = "";
+        return;
+      }
+
+      // Send message
+      messagesRef.push({
+        name: nickname,
+        text: input.value.trim(),
+        time: Date.now()
+      });
+      input.value = "";
+    });
+
+    // Receive messages
+    messagesRef.limitToLast(100).on("child_added", (snapshot) => {
+      const msg = snapshot.val();
+      const div = document.createElement("div");
+      div.textContent = `${msg.name}: ${msg.text}`;
+      div.className = (msg.name === nickname) ? "you" : "others";
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    });
+  </script>
+</body>
+</html>
